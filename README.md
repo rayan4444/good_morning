@@ -1,9 +1,16 @@
-# good_morning
-Morning alarm system 
+# Good_morning
+Scheduled curtain control: opens and closes at specific times
 
 # Mechanical
-(To do: insert pictures, files in release)
-(To do: suggestions to improve design)
+### Assets 
+* Fusion 360 link: https://a360.co/35GVD2y
+* See release for STEP/STL files
+
+### Improvements 
+* Add stiffness/ribs to reduce outer frame deflection 
+* tighter tolerance on bearing holder 
+* choose a lighter/smaller motor bracket
+* choos weaker/smaller mechanical end stops
 
 # Electronics
 
@@ -59,7 +66,8 @@ Power:
 * set wake up button 
 * go into deep sleep 
 
-### Personal notes / improvements to do 
+### Personal notes / improvements to do
+* have a seperate RTC chip with less drift ? 
 * you can retain some simple things in RTC memory 
 ```cpp
 RTC_DATA_ATTR int bootCount = 0;
