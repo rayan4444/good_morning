@@ -8,6 +8,8 @@ Scheduled curtain control: opens and closes at specific times
 
 ### Improvements 
 * Add stiffness/ribs to reduce outer frame deflection 
+* smaller PCB mounting holes (changed diametr from 3mm to 2.7mm)
+* larger chamfer to match curtain rail I have at home
 * tighter tolerance on bearing holder 
 * choose a lighter/smaller motor bracket
 * choos weaker/smaller mechanical end stops
