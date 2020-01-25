@@ -37,7 +37,7 @@ Power:
 |Stepper_step|16||
 |Stepper_direction|17||
 |Stepper_enable|4|active low|
-|Stepper_sleep|5||
+|Stepper_sleep|5|active low|
 |Limit_switch_1|14|has external pullup (R23)|
 |Limit_switch_2|12|no external pullup (R22), enable internal pullup|
 |I2C_SCL|22||
@@ -50,6 +50,7 @@ Power:
 
 ### Errata
 * Remove R22: the external pullup messes with communication with flash when programming. 
+* Add 10k pull up resistor on the nENA line so that when the MCU is asleep the stepper is not enabled. 
 
 # Firmware
 
