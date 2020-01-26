@@ -63,11 +63,13 @@ Power:
 * else, connect to wifi 
 * get time from NTP server
 * check if it time to open/close the curtains 
-* open/close the curtains if is (TO BE WRITTEN)
+* open/close the curtains
 * turn Wi-Fi OFF
 * set wake up timer 
 * set wake up button 
 * go into deep sleep 
+
+> NOTE: this firmware version doesn't use the end stops to check the curtain status because the end stops I have are too strong and don't work. It will be updated once I find new end stops. 
 
 ### Personal notes / improvements to do
 * have a seperate RTC chip with less drift ? 

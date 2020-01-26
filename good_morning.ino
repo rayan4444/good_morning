@@ -9,7 +9,7 @@
 
 //math
 const float pi = 3.14;
-const float speed = 5.0; //in mm/s
+
 //pinout
 #define led 13
 #define step 16
@@ -27,8 +27,8 @@ volatile bool button_pressed = 0;
 volatile bool lim_1_reached = 0; //lim 1 reached means the curtain is fully open
 volatile bool lim_2_reached = 0; //lim 2 reached means the curtain is fully closed
 //WiFi credentials
-const char* ssid = "HAXhome";
-const char* password = "Shenzhen2018";
+const char* ssid = "XXX";
+const char* password = "XXX";
 
 //varialbles for time
 const char* ntpServer = "pool.ntp.org";
@@ -37,33 +37,25 @@ const int daylightOffset_sec = 0; // China doesn't do Dailight saving so 0
 
 //curtain open time
 struct quand_t {
-    int open_hour = 14;
-    int open_min = 15;
+    int open_hour = 7;
+    int open_min = 30;
     int open_late_hour = 10;
     int open_late_min = 30;
     int close_hour = 18;
-    int close_min = 0;
+    int close_min = 30;
 } curtain;
 
-// curtain status
-typedef enum {
-    FULLY_CLOSED = 0,
-    FULLY_OPEN = 1,
-    IN_BETWEEN = 2,
-} status_t;
-
-//counting how many times it boots (testing purposes only)
-RTC_DATA_ATTR int bootCount = 0;
+//keeping the curtain status in memory during sleep
+RTC_DATA_ATTR bool curtain_status = 0;
 
 void setup()
 {
     Serial.begin(115200);
     delay(1000);
 
-    //print bootCount
-    // ++bootCount;
-    // Serial.print("Boot Count: ");
-    // Serial.println(bootCount);
+    //print curtain status
+    Serial.print("Curtain status: ");
+    Serial.println(curtain_status);
 
     //check wake up reason
     print_wakeup_reason();
@@ -88,7 +80,6 @@ void setup()
     digitalWrite(_ena, HIGH);
     digitalWrite(sleep, HIGH);
 
-
     //if battery low, wake up every 5 seconds and blink the light but don't proceed
     if (vbat_low()){
         digitalWrite(led, HIGH);
@@ -103,9 +94,6 @@ void setup()
     Serial.printf("Connecting to %s ", ssid);
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
-        digitalWrite(led, HIGH);
-        delay(500);
-        digitalWrite(led, LOW);
         Serial.print(".");
     }
     Serial.println(" CONNECTED");
@@ -192,6 +180,8 @@ void curtaintime()
     Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
     int opening_hour, opening_min;
     // check opening time
+    Serial.print("Day: ");
+    Serial.println(timeinfo.tm_wday);
     if (timeinfo.tm_wday == 0) {
         opening_hour = curtain.open_late_hour;
         opening_min = curtain.open_late_min;
@@ -203,55 +193,41 @@ void curtaintime()
     if (timeinfo.tm_hour == opening_hour) {
         //check minutes
         if (timeinfo.tm_min >= curtain.open_min) {
-            // if the curtain opening time has passed and the curtains are not already fully open, open them
-            if (curtain_status() != FULLY_OPEN) {
-                open_curtains();
+            
+            if (!curtain_status){
+            open_curtains();
+            curtain_status=1;
+            }else{
+                Serial.println("curtain already open");
             }
         }
-        else {
-            Serial.println("not time");
-        }
     }
+
     //check if it is time to close
     if (timeinfo.tm_hour == curtain.close_hour) {
         if (timeinfo.tm_min >= curtain.close_min) {
-            // if the curtain closign time has passed and the curtains are not already fully closed, close them
-            if (curtain_status() != FULLY_CLOSED) {
-                close_curtains();
-            }
+           if (curtain_status){
+            close_curtains();
+            curtain_status=0;           
+           }
+           else{
+               Serial.println("curtain already closed");
+           }
         }
     }
 }
 
-status_t curtain_status()
-{
-    // if limit switch 2 is pressed, the curtain is fully closed
-    if (digitalRead(lim_2) == 0) {
-        Serial.println("Curtains fully closed");
-        return FULLY_CLOSED;
-    } else {
-        //if limit switch 1 is pressd, the curetain is fully open
-        if (digitalRead(lim_1) == 0) {
-            Serial.println("Curtains fully open");
-            return FULLY_OPEN;
-        } else {
-            // the curtain is partially open
-            Serial.println("Curtains in between");
-            return IN_BETWEEN;
-        }
-    }
-}
 
 void open_curtains()
 {
     Serial.println("curtains opening");
-    move_stepper(200); //move the stepper 20cm forward
+    move_stepper(-300); //move the stepper 20cm forward
 }
 
 void close_curtains()
 {
     Serial.println("curtains closing");
-    move_stepper(-200); //move the stepper 20 cm back
+    move_stepper(300); //move the stepper 20 cm back
 }
 
 void print_wakeup_reason()
@@ -307,22 +283,21 @@ void move_stepper(int16_t distance) // distance in millimeters
     uint32_t microsteps = (uint32_t)(6400 / (25 * pi));
     microsteps = distance * microsteps;
 
-    uint32_t time = (uint32_t)((1 / speed) * 1000000); //in microseconds
-    time = time * distance;
     for (int i = 0; i < microsteps; i++) {
         // check end stop flags
-        if (lim_1_reached || lim_2_reached) {
+        if (lim_1_reached) {
             // disable the stepper
             digitalWrite(_ena, HIGH);
             digitalWrite(sleep, LOW);
             i = microsteps + 1; // exit the loop
+            lim_1_reached=0;
             Serial.println("Stepper hit end stop");
         } else {
             // move by one microstep
             digitalWrite(step, HIGH);
-            delayMicroseconds(100);
+            delayMicroseconds(50);
             digitalWrite(step, LOW);
-            delayMicroseconds(100);
+            delayMicroseconds(50);
         }
     }
     Serial.println("Stepper done");
